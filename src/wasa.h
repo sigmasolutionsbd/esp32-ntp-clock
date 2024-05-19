@@ -8,7 +8,7 @@
 #include "FS.h"
 #include "SD.h"
 
-#define REED_PIN 22
+#define REED_PIN 34
 #define SDCARD_PIN 5
 
 #define SINGLE_WRITE_COUNT 60
