@@ -11,15 +11,15 @@
       "left": -178.6,
       "attrs": { "color": "red" }
     },
-    { "type": "wokwi-slide-switch", "id": "sw1", "top": -14.8, "left": -140.9, "attrs": {} }
+    { "type": "wokwi-slide-switch", "id": "sw1", "top": -72.4, "left": -150.5, "attrs": {} }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
     [ "esp:RX", "$serialMonitor:TX", "", [] ],
     [ "led1:A", "esp:32", "green", [ "v0" ] ],
     [ "led1:C", "esp:GND.1", "green", [ "v0" ] ],
-    [ "esp:34", "sw1:3", "green", [ "h0" ] ],
-    [ "sw1:2", "esp:GND.1", "green", [ "v0" ] ]
+    [ "sw1:2", "esp:GND.1", "green", [ "v0" ] ],
+    [ "esp:22", "sw1:3", "green", [ "h0" ] ]
   ],
   "dependencies": {}
 }

@@ -9,7 +9,7 @@ volatile uint8_t readCount = 0;
 volatile bool shouldWrite = false;
 bool IRAM_ATTR dataTimerHandler(void* timerNo) {
     uint8_t val = digitalRead(REED_PIN);
-    // Serial.print(val);
+    Serial.print(val);
     digitalWrite(32, val);
 
     accumulator = accumulator << 1;
@@ -40,7 +40,7 @@ void setup() {
     initSDCard();
     delay(500);
 
-    dataTimer.attachInterruptInterval(1000 * 1000, dataTimerHandler);
+    dataTimer.attachInterruptInterval(100 * 1000, dataTimerHandler);
 }
 
 bool sdOk = false;
