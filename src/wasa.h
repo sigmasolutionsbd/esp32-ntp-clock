@@ -15,6 +15,6 @@
 #define SINGLE_WRITE_COUNT 30
 
 void initSDCard();
-void log(String message);
+void log(unsigned long currentMillis, uint32_t data);
 
 #endif

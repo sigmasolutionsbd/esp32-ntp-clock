@@ -4,8 +4,8 @@ String dataLogFile = "/data_log.txt";
 
 ESP32Timer dataTimer(0);
 
-volatile uint64_t accumulator = 0;
-volatile uint64_t storedData = 0;
+volatile uint32_t accumulator = 0;
+volatile uint32_t storedData = 0;
 volatile uint8_t readCount = 0;
 volatile bool shouldWrite = false;
 
@@ -45,27 +45,30 @@ void setup() {
 bool sdOk = false;
 
 void loop() {
-    delay(50);
+    delay(25);
 
     if (shouldWrite) {
         shouldWrite = false;
 
-        String line = "";
-        uint64_t mask = 1UL << (SINGLE_WRITE_COUNT-1);
-        while (mask) {
-            line += storedData & mask ? "1" : "0";
-            mask = mask >> 1;
-        }
-        log(line);
-        Serial.println(line);
+
+        auto currentMills = millis();
+        log(currentMills, storedData);
+        Serial.print(currentMills);
+        Serial.print(",");
+        Serial.print(storedData);
+        Serial.println();
+
     }
 }
 
-void log(String message) {
+void log(unsigned long currentMillis, uint32_t data) {
     if (!sdOk) return;
 
     File f = SD.open(dataLogFile, FILE_APPEND);
-    f.println(message);
+    f.print(currentMillis);
+    f.print(",");
+    f.print(data);
+    f.println();
     f.close();
 }
 
@@ -79,11 +82,11 @@ void initSDCard() {
     Serial.println("SD Card OK.");
 
     File f = SD.open(dataLogFile, FILE_APPEND);
-    f.print("#Begin data collection, each line width ");
+    f.print("#Begin data collection, format millis,value[newline]. Where millis is the current value of millis() function and value is a integer that represent bitmasks of ");
     f.print(SINGLE_WRITE_COUNT);
-    f.print(" digit and each digit represent ");
+    f.print(" sample (least significant bit is recent) those are taken periodically each ");
     f.print(TIMER_INTERRUPT_WIDTH);
-    f.print("ms, so each line represnet ");
+    f.print("ms, so each value encode ");
     f.print((SINGLE_WRITE_COUNT*TIMER_INTERRUPT_WIDTH)/1000);
     f.println(" seconds.");
     f.close();
