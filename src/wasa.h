@@ -11,8 +11,10 @@
 #define REED_PIN 34
 #define SDCARD_PIN 5
 
-#define SINGLE_WRITE_COUNT 60
+#define TIMER_INTERRUPT_WIDTH 200
+#define SINGLE_WRITE_COUNT 30
 
 void initSDCard();
+void log(String message);
 
 #endif

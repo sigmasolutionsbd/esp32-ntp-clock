@@ -1,8 +1,9 @@
 #include "wasa.h"
 
-String dataLogFile = "/data_log.csv";
+String dataLogFile = "/data_log.txt";
 
 ESP32Timer dataTimer(0);
+
 volatile uint64_t accumulator = 0;
 volatile uint64_t storedData = 0;
 volatile uint8_t readCount = 0;
@@ -10,7 +11,6 @@ volatile bool shouldWrite = false;
 
 bool IRAM_ATTR dataTimerHandler(void* timerNo) {
     uint8_t val = digitalRead(REED_PIN);
-    // Serial.print(val);
 
     accumulator = accumulator << 1;
     accumulator = accumulator | val;
@@ -39,7 +39,7 @@ void setup() {
     initSDCard();
     delay(500);
 
-    dataTimer.attachInterruptInterval(500 * 1000, dataTimerHandler);
+    dataTimer.attachInterruptInterval(TIMER_INTERRUPT_WIDTH * 1000, dataTimerHandler);
 }
 
 bool sdOk = false;
@@ -51,13 +51,13 @@ void loop() {
         shouldWrite = false;
 
         String line = "";
-        uint8_t cnt = SINGLE_WRITE_COUNT;
-        while (cnt--) {
-            line += storedData & 1 ? "1" : "0";
-            storedData = storedData >> 1;
+        uint64_t mask = 1UL << (SINGLE_WRITE_COUNT-1);
+        while (mask) {
+            line += storedData & mask ? "1" : "0";
+            mask = mask >> 1;
         }
-        Serial.println(line);
         log(line);
+        Serial.println(line);
     }
 }
 
@@ -79,6 +79,12 @@ void initSDCard() {
     Serial.println("SD Card OK.");
 
     File f = SD.open(dataLogFile, FILE_APPEND);
-    f.println("Begin data collect");
+    f.print("#Begin data collection, each line width ");
+    f.print(SINGLE_WRITE_COUNT);
+    f.print(" digit and each digit represent ");
+    f.print(TIMER_INTERRUPT_WIDTH);
+    f.print("ms, so each line represnet ");
+    f.print((SINGLE_WRITE_COUNT*TIMER_INTERRUPT_WIDTH)/1000);
+    f.println(" seconds.");
     f.close();
 }
