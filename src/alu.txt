@@ -1,0 +1,119 @@
+#if !defined(ESP32)
+#error This code is intended to run on the ESP32 platform! Please check your Tools->Board setting.
+#endif
+
+#define _TIMERINTERRUPT_LOGLEVEL_ 3
+
+#include <mutex>
+
+#include "Arduino.h"
+#include "ESP32TimerInterrupt.h"
+
+std::mutex bcMutex;
+std::mutex gsmMutex;
+volatile unsigned long beepCount = 0;
+volatile unsigned long beepCountToReport = 0;
+
+bool IRAM_ATTR beepCountHandler(void* timerNo) {
+    auto core = xPortGetCoreID();
+    if (core == 0)
+        Serial.println("beep running in 0");
+    else
+        Serial.println("beep running in 1");
+
+    static bool lastSureVal = 1;
+    static bool prevCycleVal = 1;
+    static uint8_t consecutiveCount = 0;
+
+    bool val = digitalRead(34);
+
+    if (val != prevCycleVal) {
+        prevCycleVal = val;
+        consecutiveCount = 0;
+        return true;
+    }
+
+    consecutiveCount++;
+
+    if (lastSureVal == 1 && val == 0 && consecutiveCount >= 5) {
+        bcMutex.lock();
+        beepCount++;
+        bcMutex.unlock();
+    }
+
+    if (consecutiveCount >= 5) {
+        consecutiveCount = 5;
+        lastSureVal = val;
+    }
+
+    return true;
+}
+
+bool IRAM_ATTR gsmSendHandler(void* timerNo) {
+    auto core = xPortGetCoreID();
+    if (core == 0)
+        Serial.println("gsm running in 0");
+    else
+        Serial.println("gsm running in 1");
+
+    bcMutex.lock();
+    unsigned long bcToReport = beepCount;
+    beepCount = 0;
+    bcMutex.unlock();
+
+    Serial.println("Hmm");
+    Serial.println("Ok");
+
+    return true;
+}
+
+ESP32Timer beepCountTimer(0);
+ESP32Timer gsmSendTimer(1);
+
+void setup() {
+    pinMode(34, INPUT_PULLUP);
+    pinMode(32, OUTPUT);
+
+    Serial.begin(115200);
+
+    while (!Serial && millis() < 5000);
+
+    delay(500);
+
+    Serial.print(F("\nStarting Argument_None on "));
+    Serial.println(ARDUINO_BOARD);
+    Serial.println(ESP32_TIMER_INTERRUPT_VERSION);
+    Serial.print(F("CPU Frequency = "));
+    Serial.print(F_CPU / 1000000);
+    Serial.println(F(" MHz"));
+
+    if (beepCountTimer.attachInterruptInterval(1000 * 1000, beepCountHandler)) {
+        Serial.print(F("Starting  beep count timer OK, millis() = "));
+        Serial.println(millis());
+    } else {
+        Serial.println(F("Can't start beep count timer"));
+    }
+
+    if (gsmSendTimer.attachInterruptInterval(10000 * 1000, gsmSendHandler)) {
+        Serial.print(F("Starting gsm send timer OK, millis() = "));
+        Serial.println(millis());
+    } else {
+        Serial.println(F("Can't start gsm send timer"));
+    }
+
+    auto core = xPortGetCoreID();
+    if (core == 0)
+        Serial.println("setup running in 0");
+    else
+        Serial.println("setup running in 1");
+}
+
+void loop() {
+    auto core = xPortGetCoreID();
+    if (core == 0)
+        Serial.println("loop running in 0");
+    else
+        Serial.println("loop running in 1");
+
+    delay(1000000);
+}
