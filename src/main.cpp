@@ -40,7 +40,7 @@ void setup() {
     initSDCard();
     delay(500);
 
-    dataTimer.attachInterruptInterval(100 * 1000, dataTimerHandler);
+    dataTimer.attachInterruptInterval(1000 * 1000, dataTimerHandler);
 }
 
 bool sdOk = false;
